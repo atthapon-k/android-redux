@@ -1,4 +1,4 @@
-package com.atthapon.android_redux
+package com.atthapon.androidredux
 
 
 import androidx.test.InstrumentationRegistry
