@@ -5,15 +5,14 @@ import io.reactivex.Flowable
 import io.reactivex.disposables.Disposable
 
 object RxReDroid {
-    @JvmStatic
-    fun flowable(store: ReDroidStore): Flowable<ReDroidStore> {
-        return Flowable.create<ReDroidStore>({ emitter ->
+    fun <State> flowable(store: Store<State>): Flowable<Store<State>> {
+        return Flowable.create<Store<State>>({ emitter ->
             val subscription = store.subscribe {
                 emitter.onNext(store)
             }
 
             var isDisposed = false
-            emitter.setDisposable(object : Disposable {
+            emitter.setDisposable(object: Disposable {
                 override fun isDisposed(): Boolean = isDisposed
 
                 override fun dispose() {
