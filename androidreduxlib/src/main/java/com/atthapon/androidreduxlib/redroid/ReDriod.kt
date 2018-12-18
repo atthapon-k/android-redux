@@ -4,6 +4,7 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 interface Action
+interface AppState
 typealias Reducer<State> = (State, Action) -> State
 typealias Subscription<State> = (State) -> Unit
 typealias UnSubscription = () -> Boolean
@@ -22,25 +23,27 @@ interface Next<State> {
     fun next(store: Store<State>, action: Action): Action
 }
 
-class NextMiddleware<State>(val middleware: Middleware<State>, val next: Next<State>): Next<State> {
+class NextMiddleware<State>(val middleware: Middleware<State>, val next: Next<State>) : Next<State> {
     override fun next(store: Store<State>, action: Action): Action {
         return middleware.applyMiddleware(store, action, next)
     }
 }
 
-class EndOfChain<State>: Next<State> {
+class EndOfChain<State> : Next<State> {
     override fun next(store: Store<State>, action: Action): Action = action
 }
 
-open class ReDroidStore<State>(initialState: State,
-                               private val reducers: ArrayList<Reducer<State>>,
-                               private val middlewares: ArrayList<Middleware<State>>): Store<State> {
+open class ReDroidStore(
+    initialState: AppState,
+    private val reducers: ArrayList<Reducer<AppState>>,
+    private val middlewares: ArrayList<Middleware<AppState>>
+) : Store<AppState> {
 
     private val lock = ReentrantLock()
-    private val subscriptions = arrayListOf<Subscription<State>>()
+    private val subscriptions = arrayListOf<Subscription<AppState>>()
 
     @Volatile
-    override var state: State = initialState
+    override var state: AppState = initialState
 
     override fun dispatch(action: Action) {
         lock.withLock {
@@ -50,13 +53,13 @@ open class ReDroidStore<State>(initialState: State,
         subscriptions.forEach { it(state) }
     }
 
-    override fun subscribe(subscription: Subscription<State>): () -> Boolean {
+    override fun subscribe(subscription: Subscription<AppState>): () -> Boolean {
         subscriptions.add(subscription)
         subscription(state)
         return { subscriptions.remove(subscription) }
     }
 
-    private fun applyReducers(state: State, action: Action): State {
+    private fun applyReducers(state: AppState, action: Action): AppState {
         var newState = state
         for (reducer in reducers) {
             newState = reducer(newState, action)
@@ -69,7 +72,7 @@ open class ReDroidStore<State>(initialState: State,
         return chain.next(this, action)
     }
 
-    private fun createNext(index: Int): Next<State> {
+    private fun createNext(index: Int): Next<AppState> {
         if (index == middlewares.size) {
             return EndOfChain()
         }
