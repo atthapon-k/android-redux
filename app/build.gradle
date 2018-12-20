@@ -7,7 +7,7 @@ apply plugin: 'kotlin-android-extensions'
 android {
     compileSdkVersion 28
     defaultConfig {
-        applicationId "com.atthapon.androidredux"
+        applicationId "com.atthapon.redrux"
         minSdkVersion 15
         targetSdkVersion 28
         versionCode 1
@@ -33,5 +33,5 @@ dependencies {
 
     implementation "io.reactivex.rxjava2:rxjava:$rxjava2_version"
 
-    implementation project(":androidreduxlib")
+    implementation project(':redruxlib')
 }

@@ -1,1 +1,1 @@
-include ':app', ':androidreduxlib'
+include ':app', ':redruxlib'
