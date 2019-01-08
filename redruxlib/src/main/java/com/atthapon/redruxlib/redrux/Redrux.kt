@@ -67,14 +67,16 @@ open class StoreImpl<State>(
     }
 
     private fun applyMiddleware(action: Action): Action {
-        val chain = createNext(0)
+        val chain = createNext(0, action)
         return chain.next(this, action)
     }
 
-    private fun createNext(index: Int): Next<State> {
+    private fun createNext(index: Int, action: Action): Next<State> {
         if (index == middlewares.size) {
             return EndOfChain()
         }
-        return NextMiddleware(middlewares[index], createNext(index + 1))
+        val next = NextMiddleware(middlewares[index], createNext(index + 1, action))
+        next.next(this, action)
+        return next
     }
 }
