@@ -15,21 +15,7 @@ interface Store<State> {
 }
 
 interface Middleware<State> {
-    fun applyMiddleware(store: Store<State>, action: Action, next: Next<State>): Action
-}
-
-interface Next<State> {
-    fun next(store: Store<State>, action: Action): Action
-}
-
-class NextMiddleware<State>(val middleware: Middleware<State>, val next: Next<State>) : Next<State> {
-    override fun next(store: Store<State>, action: Action): Action {
-        return middleware.applyMiddleware(store, action, next)
-    }
-}
-
-class EndOfChain<State> : Next<State> {
-    override fun next(store: Store<State>, action: Action): Action = action
+    fun applyMiddleware(store: Store<State>, action: Action): Action
 }
 
 open class StoreImpl<State>(
@@ -67,16 +53,10 @@ open class StoreImpl<State>(
     }
 
     private fun applyMiddleware(action: Action): Action {
-        val chain = createNext(0, action)
-        return chain.next(this, action)
-    }
-
-    private fun createNext(index: Int, action: Action): Next<State> {
-        if (index == middlewares.size) {
-            return EndOfChain()
+        var newAction = action
+        for (middleware in middlewares) {
+            newAction = middleware.applyMiddleware(this, action)
         }
-        val next = NextMiddleware(middlewares[index], createNext(index + 1, action))
-        next.next(this, action)
-        return next
+        return newAction
     }
 }
