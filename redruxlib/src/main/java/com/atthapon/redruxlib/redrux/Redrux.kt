@@ -22,21 +22,21 @@ interface Next<State> {
     fun next(store: Store<State>, action: Action): Action
 }
 
-class NextMiddleware<State>(val middleware: Middleware<State>, val next: Next<State>): Next<State> {
+class NextMiddleware<State>(val middleware: Middleware<State>, val next: Next<State>) : Next<State> {
     override fun next(store: Store<State>, action: Action): Action {
         return middleware.applyMiddleware(store, action, next)
     }
 }
 
-class EndOfChain<State>: Next<State> {
+class EndOfChain<State> : Next<State> {
     override fun next(store: Store<State>, action: Action): Action = action
 }
 
-class StoreImpl<State>(
+open class StoreImpl<State>(
     initialState: State,
     private val reducers: ArrayList<Reducer<State>>,
     private val middlewares: ArrayList<Middleware<State>>
-): Store<State> {
+) : Store<State> {
 
     private val lock = ReentrantLock()
     private val subscriptions = arrayListOf<Subscription<State>>()
