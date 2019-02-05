@@ -55,7 +55,7 @@ open class StoreImpl<State>(
     private fun applyMiddleware(action: Action): Action {
         var newAction = action
         for (middleware in middlewares) {
-            newAction = middleware.applyMiddleware(this, newAction)
+            newAction = middleware.applyMiddleware(this, action)
         }
         return newAction
     }
