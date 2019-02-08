@@ -1,62 +1,96 @@
 package com.atthapon.redruxlib.redrux
 
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
+import io.reactivex.Observable
+import io.reactivex.Scheduler
+import io.reactivex.annotations.CheckReturnValue
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 
 interface Action
-typealias Reducer<State> = (State, Action) -> State
-typealias Subscription<State> = (State) -> Unit
-typealias UnSubscription = () -> Boolean
 
-interface Store<State> {
-    var state: State
+interface State
+
+interface Reducer<S : State> {
+
+    fun reduce(currentState: S, action: Action): S
+}
+
+interface Middleware<S : State> {
+
+    fun performBeforeReducingState(currentState: S, action: Action) {}
+
+    fun performAfterReducingState(action: Action, nextState: S) {}
+}
+
+interface StoreType<S : State> {
+
+    val states: Observable<S>
+
+    val indistinctStates: Observable<S>
+
+    var replaceReducer: (S, Action) -> S
+
     fun dispatch(action: Action)
-    fun subscribe(subscription: Subscription<State>): UnSubscription
+
+    fun dispatch(actions: Observable<out Action>): Disposable
+
+    fun addMiddleware(middleware: Middleware<S>)
+
+    fun removeMiddleware(middleware: Middleware<S>): Boolean
 }
 
-interface Middleware<State> {
-    fun applyMiddleware(store: Store<State>, action: Action): Action
-}
+class Store<S : State>(
+    initialState: S,
+    reducer: Reducer<S>,
+    defaultScheduler: Scheduler = Schedulers.single()
+) : StoreType<S> {
 
-open class StoreImpl<State>(
-    initialState: State,
-    private val reducers: ArrayList<Reducer<State>>,
-    private val middlewares: ArrayList<Middleware<State>>
-) : Store<State> {
+    object NoAction : Action
 
-    private val lock = ReentrantLock()
-    private val subscriptions = arrayListOf<Subscription<State>>()
+    private val actionSubject = PublishSubject.create<Action>()
 
-    @Volatile
-    override var state: State = initialState
+    override val states: Observable<S>
+        get() = _states.distinctUntilChanged()
+
+    override val indistinctStates: Observable<S>
+        get() = _states
+
+    private val _states: Observable<S>
+
+    private val middlewares = mutableListOf<Middleware<S>>()
+
+    // By default, this is doing nothing, just passing the reduced state
+    override var replaceReducer: (S, Action) -> S = { reducedState, _ -> reducedState }
+
+    init {
+        _states = actionSubject
+            .scan(initialState to NoAction as Action) { (state, _), action ->
+                middlewares.onEach { it.performBeforeReducingState(state, action) }
+                val reducedState = reducer.reduce(state, action)
+                val nextState = replaceReducer(reducedState, action)
+                nextState to action
+            }
+            .doAfterNext { next ->
+                val (nextState, latestAction) = next
+                middlewares.onEach { it.performAfterReducingState(latestAction, nextState) }
+            }
+            .map(Pair<S, Action>::first)
+            .subscribeOn(defaultScheduler)
+            .replay(1)
+            .autoConnect()
+    }
 
     override fun dispatch(action: Action) {
-        lock.withLock {
-            val newAction = applyMiddleware(action)
-            state = applyReducers(state, newAction)
-        }
-        subscriptions.forEach { it(state) }
+        actionSubject.onNext(action)
     }
 
-    override fun subscribe(subscription: Subscription<State>): () -> Boolean {
-        subscriptions.add(subscription)
-        subscription(state)
-        return { subscriptions.remove(subscription) }
+    @CheckReturnValue
+    override fun dispatch(actions: Observable<out Action>): Disposable = actions.subscribe(actionSubject::onNext)
+
+    override fun addMiddleware(middleware: Middleware<S>) {
+        middlewares.add(middleware)
     }
 
-    private fun applyReducers(state: State, action: Action): State {
-        var newState = state
-        for (reducer in reducers) {
-            newState = reducer(newState, action)
-        }
-        return newState
-    }
-
-    private fun applyMiddleware(action: Action): Action {
-        var newAction = action
-        for (middleware in middlewares) {
-            newAction = middleware.applyMiddleware(this, action)
-        }
-        return newAction
-    }
+    override fun removeMiddleware(middleware: Middleware<S>) = middlewares.remove(middleware)
 }
