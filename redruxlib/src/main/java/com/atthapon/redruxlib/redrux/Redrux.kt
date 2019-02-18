@@ -25,9 +25,9 @@ interface Middleware<S : State> {
 
 interface StoreType<S : State> {
 
-    val states: Observable<S>
+    val states: Observable<Pair<S, Action>>
 
-    val indistinctStates: Observable<S>
+    val indistinctStates: Observable<Pair<S, Action>>
 
     var replaceReducer: (S, Action) -> S
 
@@ -50,13 +50,13 @@ class Store<S : State>(
 
     private val actionSubject = PublishSubject.create<Action>()
 
-    override val states: Observable<S>
+    override val states: Observable<Pair<S, Action>>
         get() = _states.distinctUntilChanged()
 
-    override val indistinctStates: Observable<S>
+    override val indistinctStates: Observable<Pair<S, Action>>
         get() = _states
 
-    private val _states: Observable<S>
+    private val _states: Observable<Pair<S, Action>>
 
     private val middlewares = mutableListOf<Middleware<S>>()
 
@@ -75,7 +75,9 @@ class Store<S : State>(
                 val (nextState, latestAction) = next
                 middlewares.onEach { it.performAfterReducingState(latestAction, nextState) }
             }
-            .map(Pair<S, Action>::first)
+            .map {
+                it
+            }
             .subscribeOn(defaultScheduler)
             .replay(1)
             .autoConnect()
