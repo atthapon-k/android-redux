@@ -1,4 +1,4 @@
-package com.atthapon.redruxlib.redrux
+package com.atthapon.marcohredux
 
 import io.reactivex.Observable
 import io.reactivex.Scheduler

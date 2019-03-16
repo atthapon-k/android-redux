@@ -1,1 +1,1 @@
-include ':app', ':redruxlib'
+include ':app', ':marcoh-redux-lib'

@@ -33,5 +33,5 @@ dependencies {
 
     implementation "io.reactivex.rxjava2:rxjava:$rxjava2_version"
 
-    implementation project(':redruxlib')
+    implementation project(':marcoh-redux-lib')
 }
