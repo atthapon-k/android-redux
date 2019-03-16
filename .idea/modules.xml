@@ -3,8 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/redrux.iml" filepath="$PROJECT_DIR$/redrux.iml" />
-      <module fileurl="file://$PROJECT_DIR$/redruxlib/redruxlib.iml" filepath="$PROJECT_DIR$/redruxlib/redruxlib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/marcoh-redux.iml" filepath="$PROJECT_DIR$/marcoh-redux.iml" />
+      <module fileurl="file://$PROJECT_DIR$/marcoh-redux-lib/marcoh-redux-lib.iml" filepath="$PROJECT_DIR$/marcoh-redux-lib/marcoh-redux-lib.iml" />
     </modules>
   </component>
 </project>
