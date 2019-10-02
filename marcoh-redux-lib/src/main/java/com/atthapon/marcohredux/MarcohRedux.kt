@@ -88,7 +88,8 @@ class Store<S : State>(
     }
 
     @CheckReturnValue
-    override fun dispatch(actions: Observable<out Action>): Disposable = actions.subscribe(actionSubject::onNext)
+    override fun dispatch(actions: Observable<out Action>): Disposable =
+        actions.subscribe(actionSubject::onNext)
 
     override fun addMiddleware(middleware: Middleware<S>) {
         middlewares.add(middleware)
