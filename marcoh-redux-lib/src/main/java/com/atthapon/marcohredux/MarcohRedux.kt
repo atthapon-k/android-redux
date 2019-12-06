@@ -48,7 +48,7 @@ class Store<S : State>(
 
     object NoAction : Action
 
-    private val actionSubject = PublishSubject.create<Action>()
+    private var actionSubject = PublishSubject.create<Action>()
 
     override val states: Observable<Pair<S, Action>>
         get() = _states.distinctUntilChanged()
@@ -84,7 +84,12 @@ class Store<S : State>(
     }
 
     override fun dispatch(action: Action) {
-        actionSubject.onNext(action)
+        try {
+            actionSubject.onNext(action)
+        } catch (ex: Exception) {
+            actionSubject = PublishSubject.create()
+            actionSubject.onNext(action)
+        }
     }
 
     @CheckReturnValue
