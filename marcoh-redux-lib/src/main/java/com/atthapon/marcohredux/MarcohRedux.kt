@@ -1,5 +1,6 @@
 package com.atthapon.marcohredux
 
+import android.annotation.SuppressLint
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.annotations.CheckReturnValue
@@ -83,13 +84,9 @@ class Store<S : State>(
             .autoConnect()
     }
 
+    @SuppressLint("CheckResult")
     override fun dispatch(action: Action) {
-        try {
-            actionSubject.onNext(action)
-        } catch (ex: Exception) {
-            actionSubject = PublishSubject.create()
-            actionSubject.onNext(action)
-        }
+        Observable.fromCallable { action }.subscribe(actionSubject::onNext)
     }
 
     @CheckReturnValue
