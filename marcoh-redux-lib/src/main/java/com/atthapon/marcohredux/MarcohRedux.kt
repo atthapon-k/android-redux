@@ -7,6 +7,7 @@ import io.reactivex.annotations.CheckReturnValue
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.ReplaySubject
 
 interface Action
 
@@ -49,7 +50,7 @@ class Store<S : State>(
 
     object NoAction : Action
 
-    private var actionSubject = PublishSubject.create<Action>()
+    private var actionSubject = ReplaySubject.create<Action>()
 
     override val states: Observable<Pair<S, Action>>
         get() = _states.distinctUntilChanged()
@@ -86,7 +87,7 @@ class Store<S : State>(
 
     @SuppressLint("CheckResult")
     override fun dispatch(action: Action) {
-        Observable.fromCallable { action }.subscribe(actionSubject::onNext)
+        actionSubject.onNext(action)
     }
 
     @CheckReturnValue
